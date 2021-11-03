@@ -5,6 +5,7 @@ import random as rd
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.algorithms.shortest_paths import weighted
+from networkx.generators import directed
 import numpy as np
 import os
 
@@ -50,7 +51,7 @@ if des1=='A':
 elif des1=='B' or 'b':
 
     # n es el numero de nodos
-    n = rd.randint(15, 50)
+    n = 6
 
     nodos = [x + 1 for x in range(n)]  # Creamos la lista de nodos
 
@@ -133,30 +134,69 @@ if des1== 'B':
     while int(ori) not in G.nodes():
         print("Lo sentimos, este nodo no se encuentra en la red")
         ori=input("Seleccione un nodo de origen: ")
-    end=input("Seleccione un nodo de destino: ")
-    while int(end) not in G.nodes():
-        print("Lo sentimos, este nodo no se encuentra en la red")
-        end=input("Seleccione un nodo de destino: ")
 
+    caminos= {}
+    for d in range(len(G.nodes())):
+        try: 
+            
+            djiks= nx.dijkstra_path(G, source=int(ori), weight= "weight", target=list(G.nodes())[d])
+            if list(G.nodes())[d]==int(ori):
+                continue
+            else:
 
-    try: 
-        djiks= nx.dijkstra_path(G, source=int(ori), weight= "weight", target=int(end))
-        print(djiks)
-    except:
-        print("No hay camino hacia ese nodo")
+                caminos[list(G.nodes())[d]]= djiks
+        except:
+            print("No hay camino hacia ese nodo")
+            continue
+
+    A=nx.DiGraph(directed=True)
+    for k in caminos.keys():
+        A.add_node(k)
+    for v in caminos.values():
+        for m in range(len(v)-1):
+            A.add_edge(v[m], v[m+1])
+    nx.draw_planar(A, arrows=True, with_labels=1, font_size=6, **options)
+    dijk2=nx.dijkstra_predecessor_and_distance(G, source=int(ori)) 
+    m= len(dijk2[0])
+    matrix = np.zeros((m, 3))
+    count=0
+    print(dijk2)
+    for k in dijk2[0].keys():
+        v=list(dijk2[0].values())
+        matrix[count][0]=k
+        matrix[count][1]=dijk2[1][k]
+        if len(dijk2[0][k])==0:
+            matrix[count][2]=k
+            continue
+        else:
+            matrix[count][2]=dijk2[0][k][-1]
+        count+=1
+    print(matrix)
+    plt.show()
 else: 
     ori=input("Seleccione un nodo de origen: ")
     while ori not in G.nodes():
         print("Lo sentimos, este nodo no se encuentra en la red")
         ori=input("Seleccione un nodo de origen: ")
-    end=input("Seleccione un nodo de destino: ")
-    while end not in G.nodes():
-        print("Lo sentimos, este nodo no se encuentra en la red")
-        end=input("Seleccione un nodo de destino: ")
+    caminos= {}
+    for d in range(len(G.nodes())):
+        try: 
+            
+            djiks= nx.dijkstra_path(G, source=ori, weight= "weight", target=list(G.nodes())[d])
+            if list(G.nodes())[d]==ori:
+                continue
+            else:
 
-
-    try: 
-        djiks= nx.dijkstra_path(G, source=ori, weight= "weight", target=end)
-        print(djiks)
-    except:
-        print("No hay camino hacia ese nodo")
+                caminos[list(G.nodes())[d]]= djiks
+        except:
+            print("No hay camino hacia ese nodo")
+            continue
+    print(caminos)
+    A=nx.DiGraph(directed=True)
+    for k in caminos.keys():
+        A.add_node(k)
+    for v in caminos.values():
+        for m in range(len(v)-1):
+            A.add_edge(v[m], v[m+1])
+    nx.draw_spectral(A, arrows=True, with_labels=1, font_size=6, **options)
+    plt.show()
