@@ -1,5 +1,5 @@
 from itertools import count
-
+import time
 
 import random as rd
 import networkx as nx
@@ -38,7 +38,7 @@ while des1!= 'A' or des1!='B':
 
 if des1=='A':
     #data=pd.read_csv('data.csv')
-    G=nx.read_edgelist("data.csv", delimiter=",", data=[("weight", int)], create_using=nx.DiGraph())
+    G=nx.read_edgelist("data.csv", delimiter=",", data=[("weight", int)], create_using=nx.Graph())
     options = {
         "node_color": "lightblue",
         "node_size": 200,
@@ -51,36 +51,34 @@ if des1=='A':
 elif des1=='B' or 'b':
 
     # n es el numero de nodos
-    n = 6
+    n = rd.randint(15, 50)
 
     nodos = [x + 1 for x in range(n)]  # Creamos la lista de nodos
 
     # m es el numero de arcos
-    m = int(n + n / 2)
-    G = nx.DiGraph(directed=True)  # Creamos el grafo
+    G = nx.Graph() # Creamos el grafo
     G.add_nodes_from(nodos)
 
     # Lista para añadir aristas
-    count = 0
     aristas_ready = []
-
+    nodes_conected=[]
     # Lista de los pesos
-    pesos = []
-    for i in range(m):
-        pesos.append(rd.randint(1, 15))
 
 
-    while count < m:
-        # print("entre")
+    while len(nodes_conected) < len(list(G.nodes())):
+        print(nodes_conected)
         vini = rd.randint(1, n)
         vfin = rd.randint(1, n)
         # print(vini, vfin)
-        if (vini, vfin) in aristas_ready or vini == vfin:
+        if (vini, vfin) in aristas_ready or vini == vfin or (vfin, vini) in aristas_ready:
             continue
         else:
-            G.add_edge(vini, vfin, weight=pesos[count])
+            G.add_edge(vini, vfin, weight=rd.randint(1, 15))
             aristas_ready.append((vini, vfin))
-            count += 1
+            if vini not in nodes_conected:
+                nodes_conected.append(vini)
+            if vfin not in nodes_conected:
+                nodes_conected.append(vfin)
     options = {
         "node_color": "lightblue",
         "node_size": 200,
@@ -89,8 +87,8 @@ elif des1=='B' or 'b':
         "arrowsize": 10,
     }
     # Matriz de dispersion
-    matrix = np.zeros((m, 3))
     aristas = list(G.edges())
+    matrix = np.zeros((len(aristas), 3))
     for idx in range(len(G.edges())):
         # print(idx)
         matrix[idx][0] = aristas[idx][0]
@@ -136,20 +134,23 @@ if des1== 'B':
         ori=input("Seleccione un nodo de origen: ")
 
     caminos= {}
+    start= time.time()
     for d in range(len(G.nodes())):
         try: 
-            
             djiks= nx.dijkstra_path(G, source=int(ori), weight= "weight", target=list(G.nodes())[d])
+            
+            
             if list(G.nodes())[d]==int(ori):
                 continue
             else:
 
                 caminos[list(G.nodes())[d]]= djiks
         except:
-            print("No hay camino hacia ese nodo")
+            
             continue
-
-    A=nx.DiGraph(directed=True)
+    end= time.time()
+    print(f"Runtime of the program is {end - start}")
+    A=nx.Graph()
     for k in caminos.keys():
         A.add_node(k)
     for v in caminos.values():
@@ -158,9 +159,8 @@ if des1== 'B':
     nx.draw_planar(A, arrows=True, with_labels=1, font_size=6, **options)
     dijk2=nx.dijkstra_predecessor_and_distance(G, source=int(ori)) 
     m= len(dijk2[0])
-    matrix = np.zeros((m, 3))
+    matrix = np.zeros((m-1, 3))
     count=0
-    print(dijk2)
     for k in dijk2[0].keys():
         v=list(dijk2[0].values())
         matrix[count][0]=k
@@ -171,7 +171,28 @@ if des1== 'B':
         else:
             matrix[count][2]=dijk2[0][k][-1]
         count+=1
-    print(matrix)
+    print("A continuación tenemos la tabla de enrutamiento:\n")
+    # print(matrix)
+
+    # Para sacarlo como una tabla:
+    print("|     Nodo    |     Costo    |   Predecesor  |")  # Los titulos de las columnas
+    print("----------------------------------------------")
+    for item in matrix:
+        print(
+            "|",
+            " " * (3),
+            item[0],
+            " " * (6 - len(str(item[0]))),
+            "|",
+            " " * (3),
+            item[1],
+            " " * (7 - len(str(item[1]))),
+            "|",
+            " " * (3),
+            item[2],
+            " " * (8 - len(str(item[2]))),
+            "|",
+        )
     plt.show()
 else: 
     ori=input("Seleccione un nodo de origen: ")
@@ -179,6 +200,7 @@ else:
         print("Lo sentimos, este nodo no se encuentra en la red")
         ori=input("Seleccione un nodo de origen: ")
     caminos= {}
+    start= time.time()
     for d in range(len(G.nodes())):
         try: 
             
@@ -189,14 +211,51 @@ else:
 
                 caminos[list(G.nodes())[d]]= djiks
         except:
-            print("No hay camino hacia ese nodo")
+            
             continue
-    print(caminos)
-    A=nx.DiGraph(directed=True)
+    end= time.time()
+    print(f"Runtime of the program is {end - start}")
+    A=nx.Graph()
     for k in caminos.keys():
         A.add_node(k)
     for v in caminos.values():
         for m in range(len(v)-1):
             A.add_edge(v[m], v[m+1])
-    nx.draw_spectral(A, arrows=True, with_labels=1, font_size=6, **options)
+    nx.draw_planar(A, arrows=True, with_labels=1, font_size=6, **options)
+    dijk2=nx.dijkstra_predecessor_and_distance(G, source=ori) 
+    m= len(dijk2[0])
+    matrix = np.zeros((m-1, 3))
+    count=0
+    for k in dijk2[0].keys():
+        v=list(dijk2[0].values())
+        matrix[count][0]=k
+        matrix[count][1]=dijk2[1][k]
+        if len(dijk2[0][k])==0:
+            matrix[count][2]=k
+            continue
+        else:
+            matrix[count][2]=dijk2[0][k][-1]
+        count+=1
+    print("A continuación tenemos la tabla de enrutamiento:\n")
+    # print(matrix)
+
+    # Para sacarlo como una tabla:
+    print("|     Nodo    |     Costo    |   Predecesor  |")  # Los titulos de las columnas
+    print("----------------------------------------------")
+    for item in matrix:
+        print(
+            "|",
+            " " * (3),
+            item[0],
+            " " * (6 - len(str(item[0]))),
+            "|",
+            " " * (3),
+            item[1],
+            " " * (7 - len(str(item[1]))),
+            "|",
+            " " * (3),
+            item[2],
+            " " * (8 - len(str(item[2]))),
+            "|",
+        )
     plt.show()
